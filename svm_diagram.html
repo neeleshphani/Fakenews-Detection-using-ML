@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SVM Classification Diagram</title>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body { 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: white; 
+            margin: 0; 
+            font-family: sans-serif; 
+        }
+        .mermaid { transform: scale(1.5); }
+        .instructions {
+            position: absolute;
+            top: 20px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <b>Presentation tip:</b> Press <b>F11</b> to go full screen, then use the Snipping Tool (Windows Key + Shift + S) to capture this for Slide 5!
+    </div>
+    <div class="mermaid">
+        flowchart TD
+            A([Unverified News Article]) -->|Preprocessing| B[Tokenization & Text Cleaning]
+            B --> C[TF-IDF Vectorizer]
+            
+            subgraph SVM [Support Vector Machine Classification]
+                C -->|Numerical Matrix| D{SVM Hyperplane / Decision Boundary}
+                D -.->|Falls on Side A| E[🔴 Prediction: FAKE NEWS]
+                D -.->|Falls on Side B| F[🟢 Prediction: REAL NEWS]
+            end
+
+            %% Styling
+            classDef default fill:#f9fafb,stroke:#d1d5db,stroke-width:2px,color:#000;
+            classDef input fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#000;
+            classDef math fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#000;
+            classDef fake fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#000;
+            classDef real fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000;
+
+            class A input;
+            class B,C math;
+            class E fake;
+            class F real;
+    </div>
+</body>
+</html>
