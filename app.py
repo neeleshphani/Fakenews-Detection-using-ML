@@ -207,11 +207,31 @@ if page == "📰 Check News":
                             pass
                             
                     # 2. Autonomous Creative, Entertainment & Leadership Role Verification via Live Web
-                    elif re.search(r'(music composer|music director|composer|director|producer|actor|actress|hero|heroine|singer|author|writer|creator|ceo|chief executive officer|founder|owner|chairman|head|prime minister|president|chief minister|chancellor|king|queen)\s+of\s+([a-zA-Z0-9\s]+?)\s+is\s+([a-zA-Z\s]+)', effective_input, re.I):
-                        role_match = re.search(r'(music composer|music director|composer|director|producer|actor|actress|hero|heroine|singer|author|writer|creator|ceo|chief executive officer|founder|owner|chairman|head|prime minister|president|chief minister|chancellor|king|queen)\s+of\s+([a-zA-Z0-9\s]+?)\s+is\s+([a-zA-Z\s]+)', effective_input, re.I)
-                        role = role_match.group(1).strip().lower()
-                        work = role_match.group(2).strip()
-                        person = role_match.group(3).strip()
+                    roles_regex = (
+                        r'music composer|music director|composer|director|producer|actor|actress|hero|heroine|'
+                        r'singer|author|writer|creator|ceo|chief executive officer|founder|co-founder|owner|'
+                        r'chairman|head|prime minister|pm|president|chief minister|cm|chancellor|king|queen|governor|coach|captain'
+                    )
+                    pat_role_a = re.compile(rf'^(?:the\s+)?({roles_regex})\s+(?:of|for|in)\s+([a-zA-Z0-9\s\.\-]+?)\s+is\s+([a-zA-Z\s\.\-]+)$', re.I)
+                    pat_role_b = re.compile(rf'^(?:the\s+)?([a-zA-Z0-9\s\.\-]+?)(?:\'s|\s+)\s*({roles_regex})\s+is\s+([a-zA-Z\s\.\-]+)$', re.I)
+                    m_role_a = pat_role_a.search(effective_input.strip())
+                    m_role_b = pat_role_b.search(effective_input.strip())
+                    
+                    if m_role_a or m_role_b:
+                        if m_role_a:
+                            role = m_role_a.group(1).strip().lower()
+                            work = m_role_a.group(2).strip()
+                            person = m_role_a.group(3).strip()
+                        else:
+                            work = m_role_b.group(1).strip()
+                            role = m_role_b.group(2).strip().lower()
+                            person = m_role_b.group(3).strip()
+                            
+                        if role == 'cm':
+                            role = 'chief minister'
+                        elif role == 'pm':
+                            role = 'prime minister'
+                            
                         try:
                             import wikipedia
                             wikipedia.set_user_agent('FakeNewsDetectionBot/1.0 (student.project@aditya.ac.in)')
@@ -224,7 +244,7 @@ if page == "📰 Check News":
                             elif 'producer' in role:
                                 role_kw = ['produced by', 'producer']
                             elif any(k in role for k in ['ceo', 'chief executive officer']):
-                                role_kw = ['ceo', 'chief executive officer', 'chief executive']
+                                role_kw = ['ceo', 'chief executive officer', 'chief executive', 'appointed ceo', 'chief executive of']
                             elif 'founder' in role:
                                 role_kw = ['founded by', 'co-founder', 'founder']
                             elif any(k in role for k in ['owner', 'chairman']):
@@ -427,15 +447,18 @@ if page == "📰 Check News":
                         try:
                             import wikipedia
                             wikipedia.set_user_agent('FakeNewsDetectionBot/1.0 (student.project@aditya.ac.in)')
-                            search_results, sug = wikipedia.search(user_input, suggestion=True)
+                            
+                            # Prioritize extracting the subject to avoid false object pollution in Wikipedia search
+                            is_match = re.search(r'^(the\s+)?([a-zA-Z0-9\s]+?)\s+(is|are|was|were|has|have|belongs to)\s+(.*)', user_input, re.I)
+                            subject_term = is_match.group(2).strip() if is_match else user_input
+                            
+                            search_results, sug = wikipedia.search(subject_term, suggestion=True)
                             if not search_results and sug:
                                 search_results = wikipedia.search(sug)
-                            if not search_results:
-                                is_match = re.search(r'^(the\s+)?([a-zA-Z\s]+?)\s+(is|are|was|were|has|have)\s+(.*)', user_input, re.I)
-                                if is_match:
-                                    search_results, sug = wikipedia.search(is_match.group(2).strip(), suggestion=True)
-                                    if not search_results and sug:
-                                        search_results = wikipedia.search(sug)
+                            if not search_results and subject_term != user_input:
+                                search_results, sug = wikipedia.search(user_input, suggestion=True)
+                                if not search_results and sug:
+                                    search_results = wikipedia.search(sug)
                                     
                             if search_results:
                                 top_result = search_results[0]
@@ -466,6 +489,7 @@ if page == "📰 Check News":
                                     overlap = claim_words.intersection(summary_words)
                                     if len(overlap) / len(claim_words) < 0.35:
                                         pred = 0
+                                        reason_text = f"Live Wikipedia records for '{top_result}' do not corroborate the claim: \"{wiki_summary}\""
                         except Exception:
                             pass
 
